@@ -4,6 +4,7 @@ Used for validation and puzzle generation
 """
 
 class BacktrackingSolver:
+    solution = None
     def __init__(self):
         pass
     
@@ -53,6 +54,8 @@ class BacktrackingSolver:
         # Check each filled cell
         for i in range(9):
             for j in range(9):
+                if isinstance(board[i][j], type('a')) :
+                    return False
                 if board[i][j] != 0:
                     num = board[i][j]
                     # Temporarily remove the number
@@ -107,6 +110,7 @@ class BacktrackingSolver:
                 
                 # Recursively try to solve
                 if self.solve(board):
+                    self.solution = [row[:] for row in board]  
                     return True
                 
                 # Backtrack if solution not found

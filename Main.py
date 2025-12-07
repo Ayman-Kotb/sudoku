@@ -15,7 +15,7 @@ class SudokuGUI:
     def __init__(self, root):
         self.root = root
         self.root.title("Sudoku Solver - CSP with Arc Consistency")
-        self.root.geometry("1000x700")
+        self.root.geometry("855x750")
         self.root.configure(bg='#f0f0f0')
         
         # Initialize solvers
@@ -24,6 +24,7 @@ class SudokuGUI:
         self.generator = SudokuGenerator()
         
         # Game state
+        self.previousBoard = [[0 for _ in range(9)] for _ in range(9)]
         self.board = [[0 for _ in range(9)] for _ in range(9)]
         self.initial_board = [[0 for _ in range(9)] for _ in range(9)]
         self.cells = {}
@@ -222,13 +223,24 @@ class SudokuGUI:
                                       command=self.new_game, padx=20, pady=10,
                                       cursor='hand2')
         self.new_game_btn.pack(fill='x', pady=5)
-        
+        self.new_game_btn = tk.Button(button_frame, text="Get previous Game",
+                                      font=('Arial', 12, 'bold'),
+                                      bg='#4A90E2', fg='white',
+                                      command=self.getPreviousGame, padx=20, pady=10,
+                                      cursor='hand2')
+        self.new_game_btn.pack(fill='x', pady=5)
         self.solve_btn = tk.Button(button_frame, text="Solve with Arc Consistency",
                                    font=('Arial', 12, 'bold'),
                                    bg='#4A90E2', fg='white',
                                    command=self.solve_puzzle, padx=20, pady=10,
                                    cursor='hand2')
         self.solve_btn.pack(fill='x', pady=5)
+        self.solve_btn_using_normal_backtracking = tk.Button(button_frame, text="Solve with Backtracking",
+                                   font=('Arial', 12, 'bold'),
+                                   bg='#4A90E2', fg='white',
+                                   command=self.solve_puzzle_using_backtrack, padx=20, pady=10,
+                                   cursor='hand2')
+        self.solve_btn_using_normal_backtracking.pack(fill='x', pady=5)
         
         self.clear_btn = tk.Button(button_frame, text="Clear Board",
                                    font=('Arial', 12, 'bold'),
@@ -275,14 +287,27 @@ class SudokuGUI:
         
         self.empty_cells_label.config(text=f"Empty Cells: {empty}")
         self.filled_cells_label.config(text=f"Pre-filled: {filled}")
-            
+    def getPreviousGame(self):
+        """Retrieve the previous game board"""
+        if self.previousBoard:
+            self.board = self.previousBoard
+            self.initial_board = [row[:] for row in self.board]
+            self.display_board()
+            self.update_statistics()
+            self.status_label.config(text="Previous game loaded!")
+        else:
+            messagebox.showinfo("No Previous Game", 
+                              "There is no previous game to load!")        
     def new_game(self):
         """Generate a new Sudoku puzzle based on mode"""
+        self.clear_board()
         mode = self.mode.get()
         
         if mode == "mode1" or mode == "mode3":
             # Generate puzzle based on difficulty
             diff = self.difficulty.get()
+            if (self.board != self.previousBoard):
+                self.previousBoard = self.board
             self.board = self.generator.generate_puzzle(diff)
             self.initial_board = [row[:] for row in self.board]
             self.display_board()
@@ -361,6 +386,35 @@ class SudokuGUI:
             
             # Store arc tree for visualization
             self.last_arc_tree = arc_tree
+        else:
+            messagebox.showerror("No Solution", 
+                               "This puzzle cannot be solved!")
+    def solve_puzzle_using_backtrack(self):
+        """Solve puzzle using normal backtracking"""
+        self.board = self.get_board_from_gui()
+        
+        # Validate input first
+        if not self.backtracking_solver.is_valid_board(self.board):
+            messagebox.showerror("Invalid Input", 
+                               "The puzzle configuration is invalid!")
+            return
+        
+        self.status_label.config(text="Solving with normal backtracking...")
+        self.root.update()
+        
+        start_time = time.time()
+        self.backtracking_solver.solve(self.board)
+        solution = self.backtracking_solver.solution
+        end_time = time.time()
+        
+        if solution:
+            self.board = solution
+            self.display_board()
+            solve_time = end_time - start_time
+            self.solve_time_label.config(text=f"Last Solve: {solve_time:.4f}s")
+            self.status_label.config(
+                text=f"Solved in {solve_time:.4f} seconds using Backtracking!")
+            self.update_statistics()
         else:
             messagebox.showerror("No Solution", 
                                "This puzzle cannot be solved!")
