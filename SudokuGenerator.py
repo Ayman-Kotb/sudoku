@@ -1,7 +1,3 @@
-"""
-Sudoku Puzzle Generator
-Generates valid Sudoku puzzles with unique solutions
-"""
 
 import random
 from Backtracking import BacktrackingSolver
@@ -11,12 +7,6 @@ class SudokuGenerator:
         self.solver = BacktrackingSolver()
         
     def generate_complete_board(self):
-        """
-        Generate a complete valid Sudoku board
-        
-        Returns:
-            Filled 9x9 Sudoku board
-        """
         board = [[0 for _ in range(9)] for _ in range(9)]
         
         # Fill diagonal 3x3 boxes first (they don't affect each other)
@@ -28,25 +18,10 @@ class SudokuGenerator:
         return board
     
     def fill_diagonal_boxes(self, board):
-        """
-        Fill the three diagonal 3x3 boxes with random numbers
-        These boxes don't share constraints with each other
-        
-        Args:
-            board: Empty 9x9 Sudoku board
-        """
         for box in range(0, 9, 3):
             self.fill_box(board, box, box)
     
     def fill_box(self, board, row_start, col_start):
-        """
-        Fill a 3x3 box with random numbers 1-9
-        
-        Args:
-            board: Sudoku board
-            row_start: Starting row of the box
-            col_start: Starting column of the box
-        """
         numbers = list(range(1, 10))
         random.shuffle(numbers)
         
@@ -57,17 +32,6 @@ class SudokuGenerator:
                 idx += 1
     
     def remove_numbers(self, board, difficulty):
-        """
-        Remove numbers from complete board based on difficulty
-        Ensures puzzle has unique solution
-        
-        Args:
-            board: Complete Sudoku board
-            difficulty: 'easy', 'medium', or 'hard'
-            
-        Returns:
-            Puzzle board with some cells empty
-        """
         # Determine number of cells to remove based on difficulty
         if difficulty == 'easy':
             cells_to_remove = 35  # ~39% filled
@@ -109,15 +73,6 @@ class SudokuGenerator:
         return puzzle
     
     def generate_puzzle(self, difficulty='medium'):
-        """
-        Generate a Sudoku puzzle with specified difficulty
-        
-        Args:
-            difficulty: 'easy', 'medium', or 'hard'
-            
-        Returns:
-            9x9 Sudoku puzzle board
-        """
         # Generate complete board
         complete_board = self.generate_complete_board()
         
@@ -127,16 +82,6 @@ class SudokuGenerator:
         return puzzle
     
     def generate_symmetric_puzzle(self, difficulty='medium'):
-        """
-        Generate a symmetrically arranged puzzle (bonus feature)
-        Numbers are removed in symmetric pairs
-        
-        Args:
-            difficulty: 'easy', 'medium', or 'hard'
-            
-        Returns:
-            9x9 Sudoku puzzle board with symmetric empty cells
-        """
         complete_board = self.generate_complete_board()
         puzzle = [row[:] for row in complete_board]
         

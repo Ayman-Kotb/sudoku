@@ -1,8 +1,3 @@
-"""
-Arc Consistency Algorithm (AC-3) for Sudoku CSP
-Implements arc consistency with visualization
-"""
-
 from collections import deque
 from Backtracking import BacktrackingSolver
 
@@ -12,17 +7,6 @@ class ArcConsistencySolver:
         self.arc_log = []  # Store steps for visualization
         
     def initialize_domains(self, board):
-        """
-        Initialize domains for each cell
-        - Pre-filled cells have singleton domain
-        - Empty cells have domain [1-9]
-        
-        Args:
-            board: 9x9 Sudoku board
-            
-        Returns:
-            Dictionary mapping (row, col) to list of possible values
-        """
         domains = {}
         for i in range(9):
             for j in range(9):
@@ -35,16 +19,6 @@ class ArcConsistencySolver:
         return domains
     
     def get_neighbors(self, cell):
-        """
-        Get all cells that share a constraint with the given cell
-        (same row, column, or 3x3 box)
-        
-        Args:
-            cell: (row, col) tuple
-            
-        Returns:
-            Set of neighbor cells
-        """
         row, col = cell
         neighbors = set()
         
@@ -68,13 +42,6 @@ class ArcConsistencySolver:
         return neighbors
     
     def create_arc_queue(self):
-        """
-        Create initial queue of all arcs in the CSP
-        An arc is a directed edge between two variables with a constraint
-        
-        Returns:
-            Queue of arcs as tuples (Xi, Xj)
-        """
         arcs = deque()
         
         for i in range(9):
@@ -88,18 +55,6 @@ class ArcConsistencySolver:
         return arcs
     
     def revise(self, domains, xi, xj):
-        """
-        Make arc (Xi, Xj) consistent
-        Remove values from domain of Xi that have no consistent value in Xj
-        
-        Args:
-            domains: Current domains
-            xi: First variable (cell)
-            xj: Second variable (cell)
-            
-        Returns:
-            True if domain of Xi was revised, False otherwise
-        """
         revised = False
         values_to_remove = []
         
@@ -129,15 +84,6 @@ class ArcConsistencySolver:
         return revised
     
     def ac3(self, domains):
-        """
-        AC-3 Algorithm for arc consistency
-        
-        Args:
-            domains: Initial domains for all variables
-            
-        Returns:
-            True if consistent domains found, False if inconsistency detected
-        """
         # Create queue of all arcs
         queue = self.create_arc_queue()
         
@@ -173,31 +119,20 @@ class ArcConsistencySolver:
         
         self.arc_log.append(f"\n=== AC-3 Completed after {iteration} iterations ===\n")
         return True
-    
+
     def assign_singleton_domains(self, board, domains):
-        """
-        Assign values from singleton domains to the board
-        
-        Args:
-            board: Current board state
-            domains: Current domains
-            
-        Returns:
-            Number of cells assigned
-        """
-        assigned_count = 0
+        assigned_cells = []
         for i in range(9):
             for j in range(9):
                 if board[i][j] == 0 and len(domains[(i, j)]) == 1:
-                    board[i][j] = domains[(i, j)][0]
-                    assigned_count += 1
-                    self.arc_log.append(
-                        f"Assigned {board[i][j]} to cell ({i}, {j})"
-                    )
-        return assigned_count
+                    val = domains[(i, j)][0]
+                    board[i][j] = val
+                    domains[(i, j)] = [val]
+                    assigned_cells.append((i, j))
+                    self.arc_log.append(f"Assigned {val} to cell ({i}, {j})")
+        return assigned_cells
     
     def is_complete(self, board):
-        """Check if board is completely filled"""
         for i in range(9):
             for j in range(9):
                 if board[i][j] == 0:
@@ -205,17 +140,6 @@ class ArcConsistencySolver:
         return True
     
     def select_unassigned_variable(self, board, domains):
-        """
-        Select next variable to assign using MRV heuristic
-        (Minimum Remaining Values - choose cell with smallest domain)
-        
-        Args:
-            board: Current board
-            domains: Current domains
-            
-        Returns:
-            (row, col) of cell with smallest domain, or None if all assigned
-        """
         min_domain_size = 10
         best_cell = None
         
@@ -228,111 +152,76 @@ class ArcConsistencySolver:
                         best_cell = (i, j)
         
         return best_cell
-    
+
     def solve_with_backtracking(self, board, domains):
-        """
-        Solve remaining puzzle using backtracking with arc consistency
-        
-        Args:
-            board: Current board state
-            domains: Current domains
-            
-        Returns:
-            True if solution found, False otherwise
-        """
-        # Check if complete
         if self.is_complete(board):
             return True
-        
-        # Select variable using MRV heuristic
+
         cell = self.select_unassigned_variable(board, domains)
         if cell is None:
             return True
-        
+
         row, col = cell
-        
-        # Try each value in domain
-        for value in domains[(row, col)][:]:  # Copy domain list
+
+        for value in domains[(row, col)][:]:
             if self.backtracking_solver.is_valid_placement(board, row, col, value):
-                # Assign value
                 board[row][col] = value
-                
-                # Save current domains
+
                 saved_domains = {k: v[:] for k, v in domains.items()}
                 domains[(row, col)] = [value]
-                
-                # Apply arc consistency
+
                 if self.ac3(domains):
-                    # Assign singleton domains
-                    self.assign_singleton_domains(board, domains)
-                    
-                    # Recursively solve
+                    assigned_cells = self.assign_singleton_domains(board, domains)
+
                     if self.solve_with_backtracking(board, domains):
                         return True
-                
-                # Backtrack
+
+                    # Backtrack: revert board assignments done in this branch
+                    for (ai, aj) in assigned_cells:
+                        board[ai][aj] = 0
+
+                # revert the chosen cell and domains
                 board[row][col] = 0
                 domains.update({k: v[:] for k, v in saved_domains.items()})
-        
+
         return False
-    
+
     def solve(self, board):
-        """
-        Main solving method using Arc Consistency
-        
-        Args:
-            board: 9x9 Sudoku board
-            
-        Returns:
-            Solved board if solution found, None otherwise
-        """
-        # Create working copy
         solution = [row[:] for row in board]
-        
-        # Initialize domains
         domains = self.initialize_domains(solution)
-        
+
         self.arc_log.append("=== Initial Board ===\n")
         self.arc_log.append(self.board_to_string(solution) + "\n")
-        
-        # Apply AC-3
-        if not self.ac3(domains):
-            return None
-        
-        # Assign singleton domains
-        self.assign_singleton_domains(solution, domains)
-        
+
+        while True:
+            if not self.ac3(domains):
+                return None
+
+            assigned_cells = self.assign_singleton_domains(solution, domains)
+            self.arc_log.append(f"Assigned {len(assigned_cells)} singletons in this pass\n")
+            if len(assigned_cells) == 0:
+                break
+
         self.arc_log.append("\n=== After Initial AC-3 ===\n")
         self.arc_log.append(self.board_to_string(solution) + "\n")
-        
-        # If not complete, use backtracking with arc consistency
+
         if not self.is_complete(solution):
             self.arc_log.append("\n=== Using Backtracking + AC-3 ===\n")
             if not self.solve_with_backtracking(solution, domains):
                 return None
-        
+
         self.arc_log.append("\n=== Final Solution ===\n")
         self.arc_log.append(self.board_to_string(solution) + "\n")
-        
+
         return solution
     
     def solve_with_visualization(self, board):
-        """
-        Solve and return visualization log
-        
-        Args:
-            board: 9x9 Sudoku board
-            
-        Returns:
-            (solution, arc_log_string) tuple
-        """
         self.arc_log = []
         solution = self.solve(board)
         arc_tree = "\n".join(self.arc_log)
         return solution, arc_tree
     
     def board_to_string(self, board):
-        """Convert board to readable string format"""
         result = []
         for i in range(9):
             if i % 3 == 0 and i != 0:

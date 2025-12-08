@@ -8,19 +8,8 @@ class BacktrackingSolver:
     def __init__(self):
         pass
     
-    def is_valid_placement(self, board, row, col, num):
-        """
-        Check if placing num at board[row][col] is valid
-        
-        Args:
-            board: 9x9 Sudoku board
-            row: row index (0-8)
-            col: column index (0-8)
-            num: number to place (1-9)
-            
-        Returns:
-            True if placement is valid, False otherwise
-        """
+    @staticmethod
+    def is_valid_placement(board, row, col, num):
         # Check row constraint
         for j in range(9):
             if j != col and board[row][j] == num:
@@ -41,16 +30,6 @@ class BacktrackingSolver:
         return True
     
     def is_valid_board(self, board):
-        """
-        Check if the current board configuration is valid
-        (no constraint violations)
-        
-        Args:
-            board: 9x9 Sudoku board
-            
-        Returns:
-            True if board is valid, False otherwise
-        """
         # Check each filled cell
         for i in range(9):
             for j in range(9):
@@ -67,16 +46,8 @@ class BacktrackingSolver:
                     board[i][j] = num  # Restore
         return True
     
-    def find_empty_cell(self, board):
-        """
-        Find the next empty cell in the board
-        
-        Args:
-            board: 9x9 Sudoku board
-            
-        Returns:
-            (row, col) tuple of empty cell, or None if board is full
-        """
+    @staticmethod
+    def find_empty_cell(board):
         for i in range(9):
             for j in range(9):
                 if board[i][j] == 0:
@@ -84,15 +55,6 @@ class BacktrackingSolver:
         return None
     
     def solve(self, board):
-        """
-        Solve Sudoku using backtracking algorithm
-        
-        Args:
-            board: 9x9 Sudoku board (modified in place)
-            
-        Returns:
-            True if solution found, False otherwise
-        """
         # Find empty cell
         empty = self.find_empty_cell(board)
         
@@ -120,17 +82,6 @@ class BacktrackingSolver:
         return False
     
     def count_solutions(self, board, limit=2):
-        """
-        Count the number of solutions for a given board
-        Used to ensure puzzle has unique solution
-        
-        Args:
-            board: 9x9 Sudoku board
-            limit: stop counting after this many solutions
-            
-        Returns:
-            Number of solutions (capped at limit)
-        """
         def count_helper(board, count):
             if count[0] >= limit:
                 return
@@ -154,35 +105,15 @@ class BacktrackingSolver:
         return count[0]
     
     def has_unique_solution(self, board):
-        """
-        Check if puzzle has exactly one solution
-        
-        Args:
-            board: 9x9 Sudoku board
-            
-        Returns:
-            True if unique solution exists, False otherwise
-        """
         return self.count_solutions(board, limit=2) == 1
     
-    def get_possible_values(self, board, row, col):
-        """
-        Get all possible values for a cell
-        
-        Args:
-            board: 9x9 Sudoku board
-            row: row index
-            col: column index
-            
-        Returns:
-            List of possible values (1-9)
-        """
-        if board[row][col] != 0:
-            return []
-        
-        possible = []
-        for num in range(1, 10):
-            if self.is_valid_placement(board, row, col, num):
-                possible.append(num)
-        
-        return possible
+    # def get_possible_values(self, board, row, col):
+    #     if board[row][col] != 0:
+    #         return []
+    #
+    #     possible = []
+    #     for num in range(1, 10):
+    #         if self.is_valid_placement(board, row, col, num):
+    #             possible.append(num)
+    #
+    #     return possible
